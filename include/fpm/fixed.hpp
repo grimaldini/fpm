@@ -7,6 +7,7 @@
 #include <functional>
 #include <limits>
 #include <type_traits>
+#include <sstream>
 
 namespace fpm
 {
@@ -32,13 +33,14 @@ class fixed
 
 public:
     inline fixed() noexcept {}
-
-	// Converts an integral number to the fixed-point type.
-    // Like static_cast, this truncates bits that don't fit.
-    template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-    constexpr inline explicit fixed(T numerator, T denominator) noexcept
-        : m_value(static_cast<BaseType>((numerator / denominator) * FRACTION_MULT))
-    {}
+	
+	template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+    inline fixed(T numerator, T denominator) noexcept {
+		auto x = static_cast<BaseType>(numerator * FRACTION_MULT);
+		auto y = static_cast<BaseType>(denominator * FRACTION_MULT);
+		auto value = (static_cast<IntermediateType>(x) * FRACTION_MULT * 2) / y;
+        m_value = static_cast<BaseType>((value / 2) + (value % 2));
+	}
 	
     // Converts an integral number to the fixed-point type.
     // Like static_cast, this truncates bits that don't fit.
@@ -73,6 +75,14 @@ public:
     constexpr inline BaseType raw_value() const noexcept
     {
         return m_value;
+    }
+	
+    // Returns the char string value of this type.
+    inline _LIBCPP_INLINE_VISIBILITY std::string ToString() const noexcept
+    {
+		std::ostringstream output;
+		output << this;
+		return output.str();
     }
 
     //! Constructs a fixed-point number from another fixed-point number.
